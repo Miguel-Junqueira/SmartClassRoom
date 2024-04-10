@@ -1,0 +1,215 @@
+[
+    {
+        "classIndex": "MmFBxO",
+        "classNumber": "PL1",
+        "startDate": "18000028032024",
+        "endDate": "20000029032024",
+        "room": "T51",
+        "associatedStudentsIndex": [
+            "5TOBW"
+        ],
+        "presentStudents": [
+            "5TOBW"
+        ],
+        "class_acronym": "IC"
+    },
+    {
+        "classIndex": "HSiNWv",
+        "classNumber": "PL1",
+        "startDate": "18000028032024",
+        "endDate": "20000028032024",
+        "room": "T51",
+        "associatedStudentsIndex": [
+            "5TOBW"
+        ],
+        "presentStudents": [
+            ""
+        ],
+        "class_acronym": "IC"
+    },
+    {
+        "classIndex": "5MbTQr",
+        "classNumber": "PL1",
+        "startDate": "18000028032024",
+        "endDate": "20000028032024",
+        "room": "T51",
+        "associatedStudentsIndex": [
+            ""
+        ],
+        "presentStudents": [
+            ""
+        ],
+        "class_acronym": "IC"
+    },
+    {
+        "classIndex": "yUDAVA",
+        "classNumber": "PL1",
+        "startDate": "18000028032024",
+        "endDate": "20000029032024",
+        "room": "T64",
+        "associatedStudentsIndex": [
+            "D9lLJ",
+            "D9lLJ",
+            "D9lLJ",
+            "DhDS5"
+        ],
+        "presentStudents": [
+            "D9lLJ"
+        ],
+        "class_acronym": "IC"
+    },
+    {
+        "classIndex": "W5J0Dq",
+        "classNumber": "PL1",
+        "startDate": "18000028032024",
+        "endDate": "20000028032024",
+        "room": "T51",
+        "associatedStudentsIndex": [
+            "DhDS5"
+        ],
+        "presentStudents": [
+            ""
+        ],
+        "class_acronym": "IC"
+    },
+    {
+        "classIndex": "YCHGeg",
+        "classNumber": "PL1",
+        "startDate": "18000028032024",
+        "endDate": "20000028032024",
+        "room": "T51",
+        "associatedStudentsIndex": [
+            "5TOBW"
+        ],
+        "presentStudents": [
+            ""
+        ],
+        "class_acronym": "IC"
+    },
+    {
+        "classIndex": "ZjZcKz",
+        "classNumber": "PL1",
+        "startDate": "18000028032024",
+        "endDate": "20000028032024",
+        "room": "T51",
+        "associatedStudentsIndex": [
+            ""
+        ],
+        "presentStudents": [
+            ""
+        ],
+        "class_acronym": "IC"
+    },
+    {
+        "classIndex": "2f2Ugb",
+        "classNumber": "PL1",
+        "startDate": "18000028032024",
+        "endDate": "20000028032024",
+        "room": "T51",
+        "associatedStudentsIndex": [
+            "D9lLJ"
+        ],
+        "presentStudents": [
+            ""
+        ],
+        "class_acronym": "IC"
+    },
+    {
+        "classIndex": "Fo9RSY",
+        "classNumber": "PL1",
+        "startDate": "18000028032024",
+        "endDate": "20000028032024",
+        "room": "T51",
+        "associatedStudentsIndex": [
+            ""
+        ],
+        "presentStudents": [
+            ""
+        ],
+        "class_acronym": "IC"
+    },
+    {
+        "classIndex": "Xpbop6",
+        "classNumber": "PL1",
+        "startDate": "18000028032024",
+        "endDate": "20000028032024",
+        "room": "T51",
+        "associatedStudentsIndex": [
+            ""
+        ],
+        "presentStudents": [
+            ""
+        ],
+        "class_acronym": "IC"
+    },
+    {
+        "classIndex": "wRs5Sy",
+        "classNumber": "PL1",
+        "startDate": "18000028032024",
+        "endDate": "20000028032024",
+        "room": "T51",
+        "associatedStudentsIndex": [
+            ""
+        ],
+        "presentStudents": [
+            ""
+        ],
+        "class_acronym": "IC"
+    },
+    {
+        "classIndex": "l0k2lo",
+        "classNumber": "PL1",
+        "startDate": "18000028032024",
+        "endDate": "20000028032024",
+        "room": "T51",
+        "associatedStudentsIndex": [
+            ""
+        ],
+        "presentStudents": [
+            ""
+        ],
+        "class_acronym": "IC"
+    },
+    {
+        "classIndex": "Scndc3",
+        "classNumber": "PL1",
+        "startDate": "18000028032024",
+        "endDate": "20000028032024",
+        "room": "T51",
+        "associatedStudentsIndex": [
+            ""
+        ],
+        "presentStudents": [
+            ""
+        ],
+        "class_acronym": "IC"
+    },
+    {
+        "classIndex": "hrmpjH",
+        "classNumber": "PL1",
+        "startDate": "18000028032024",
+        "endDate": "20000028032024",
+        "room": "T51",
+        "associatedStudentsIndex": [
+            ""
+        ],
+        "presentStudents": [
+            ""
+        ],
+        "class_acronym": "IC"
+    },
+    {
+        "classIndex": "xqyzT9",
+        "classNumber": "PL1",
+        "startDate": "16000007042024",
+        "endDate": "20000009042024",
+        "room": "T64",
+        "associatedStudentsIndex": [
+            "5TOBW"
+        ],
+        "presentStudents": [
+            "5TOBW"
+        ],
+        "class_acronym": "IC"
+    }
+]
