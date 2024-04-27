@@ -93,7 +93,7 @@
         "endDate": "20000028032024",
         "room": "T51",
         "associatedStudentsIndex": [
-            ""
+            "RC976"
         ],
         "presentStudents": [
             ""
@@ -202,14 +202,43 @@
         "classIndex": "xqyzT9",
         "classNumber": "PL1",
         "startDate": "16000007042024",
-        "endDate": "20000009042024",
+        "endDate": "23000020042024",
         "room": "T64",
         "associatedStudentsIndex": [
-            "5TOBW"
+            "5TOBW",
+            "S8hrL"
         ],
         "presentStudents": [
             "5TOBW"
         ],
         "class_acronym": "IC"
+    },
+    {
+        "classIndex": "W2V6Np",
+        "classNumber": "PL1",
+        "startDate": "17000021042024",
+        "endDate": "19000028042024",
+        "room": "T64",
+        "associatedStudentsIndex": [
+            "904x8"
+        ],
+        "presentStudents": [
+            "904x8"
+        ],
+        "class_acronym": "GEE"
+    },
+    {
+        "classIndex": "5etC08",
+        "classNumber": "PL1",
+        "startDate": "23000021042024",
+        "endDate": "23000022042024",
+        "room": "T52",
+        "associatedStudentsIndex": [
+            "INyE2"
+        ],
+        "presentStudents": [
+            "INyE2"
+        ],
+        "class_acronym": "REI"
     }
 ]

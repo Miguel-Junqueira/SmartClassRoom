@@ -5,6 +5,8 @@ import datetime
 import os 
 import sys
 import time
+import serial
+import re
 
 def add_class():
 
@@ -197,6 +199,85 @@ def add_stundent_to_class(classIndex,studentIndex):
 
     print("Student {} successfully added to class {}".format(studentIndex,classIndex))
 
+def add_student_via_reading():
+
+    # Establish serial connection
+    ser = serial.Serial(
+    port='/dev/ttyUSB0',
+    baudrate=115200
+    )
+
+    print("Waiting for card...")
+
+    uid = None  # Initialize UID variable outside the loop
+    try:
+        while True:
+            if ser.in_waiting > 0:
+                data = ser.read(ser.in_waiting).decode('utf-8')
+                match = re.search(r'\(EVENT\) Card is read with UID \(([\dA-F\s]+)\)', data)
+                if match:
+                    uid = match.group(1) 
+                    print("Card Reading caught with UID:",uid)
+                    break
+    finally:
+        ser.close()
+
+
+    studentName = input("Enter student full name: ")
+    studentUID = uid
+    studentIndex = ''.join(random.SystemRandom().choice(string.ascii_lowercase + string.digits + string.ascii_uppercase) for _ in range(5)) #6 digit random string
+
+    student_data = {
+        "studentIndex": studentIndex,
+        "studentName": studentName,
+        "studentUID": studentUID
+    }
+
+    filename = f"studentsDB.json"
+
+    try:
+        student_json = json.dumps(student_data, indent=4)
+
+        # Check if the file already exists
+        file_exists = True
+        try:
+            with open(filename, 'r') as file:
+                file_content = file.read().strip()
+                if not file_content:
+                    file_exists = False
+                elif file_content.endswith(']'):
+                    # Strip the closing bracket from the existing content
+                    file_content = file_content[:-1]
+                    with open(filename, 'w') as file:
+                        file.write(file_content)
+
+        except FileNotFoundError:
+            file_exists = False
+
+        # Add delimiters and commas if the file already exists
+        if file_exists:
+            student_json = ",\n" + student_json
+        else:
+            student_json = "[\n" + student_json
+
+        # Append the class_json string to the file
+        with open(filename, 'a') as file:
+            file.write(student_json)
+
+        # Close the array if the file already exists
+        if file_exists:
+            with open(filename, 'a') as file:
+                file.write("\n]")
+
+        if not(file_exists):
+            with open(filename, 'a') as file:
+                file.write("\n]") #apend the last ]
+
+
+        print(f"Student data saved to {filename} successfully.")
+    except Exception as e:
+        print(f"Error occurred while saving student data to {filename}: {e}")
+
 def manage_students_menu():
 
     clear_screen()
@@ -206,8 +287,9 @@ def manage_students_menu():
         print("1. Add students to database")
         print("2. Remove students from database")
         print("3. Change students associated card UID")
-        print("4. View students in databasse")
+        print("4. View students in database")
         print("5. Go back to main menu")
+        print("6. Add student via card UID reading")
 
         choice = input("Enter your choice: ")
 
@@ -236,6 +318,11 @@ def manage_students_menu():
         elif choice == '5':
             clear_screen()
             return
+        
+        elif choice == '6':
+            clear_screen()
+            add_student_via_reading()
+            clear_screen()
         
         else:
             print("Invalid choice. Please enter a valid option.")
@@ -417,10 +504,9 @@ def viewStudentsInDB(enableSelection):
         print(f"{index}. {class_data['studentIndex']} - {class_data['studentName']} - {class_data['studentUID']} ")
 
     if enableSelection == True:
-        choice = int(input("Please select the desired class: "))
+        choice = int(input("Please select the desired student: "))
         return students_data[choice-1]['studentIndex']
     #adicionar salvaguardas para opcoes erradas
-
     
 def manage_iot_nodes_menu():
     print("\nManage IoT Nodes Menu:")
@@ -453,11 +539,9 @@ def smart_classroom_admin_menu():
             time.sleep(0.5)
             clear_screen()
 
-
 def main():
 
     smart_classroom_admin_menu()
-
 
 
 if __name__ == '__main__':

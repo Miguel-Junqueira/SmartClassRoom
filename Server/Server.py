@@ -11,61 +11,104 @@ import time
 
 broker = '127.0.0.1'
 port = 1883
-topic = "smartClassRoom"
+attendanceRequestTopic = "attendanceRequestServer"
+attendanceResponseTopic = "attendanceResponse"
+storeTempfromNodesTopic = "storeTempfromNodes"
 client_id = "MainServer"
 username = ''
 password = ''
+flag_lostCon = 0
 
-def extract_mqtt_fields(message):
+def on_disconnect(client, userdata, rc):
+   global flag_lostCon
+   flag_lostCon = 1
+   print("Lost Connection to MQTT Broker!")
+
+def extract_mqtt_fields(message,topic):
     try:
         # Parse the JSON message into a Python dictionary
         message_dict = json.loads(message)
         
         # Extract individual fields from the dictionary
-        node_id = message_dict.get("nodeID")
-        local_time_date = message_dict.get("localTimeDate")
-        event_type = message_dict.get("typeOfEvent")
-        card_uid = message_dict.get("cardUID")
-        direction = message_dict.get("direction")
-        answer = message_dict.get("answer")
-        student_name = message_dict.get("studentName")
-        
-        # Return the extracted fields
-        return {
-            "node_id": node_id,
-            "local_time_date": local_time_date,
-            "event_type": event_type,
-            "card_uid": card_uid,
-            "direction": direction,
-            "answer": answer,
-            "student_name": student_name
-        }
+
+        if(topic == attendanceRequestTopic):
+
+            node_id = message_dict.get("nodeID")
+            local_time_date = message_dict.get("localTimeDate")
+            event_type = message_dict.get("typeOfEvent")
+            card_uid = message_dict.get("cardUID")
+            direction = message_dict.get("direction")
+            answer = message_dict.get("answer")
+            student_name = message_dict.get("studentName")
+
+            return {     
+                "node_id": node_id,
+                "local_time_date": local_time_date,
+                "event_type": event_type,
+                "card_uid": card_uid,
+                "direction": direction,
+                "answer": answer,
+                "student_name": student_name
+            }
+
+        if(topic == storeTempfromNodesTopic):
+            
+
+            node_id = message_dict.get("nodeID")
+            local_time_date = message_dict.get("localTimeDate")
+            event_type = message_dict.get("typeOfEvent")
+            direction = message_dict.get("direction")
+            temperature = message_dict.get("temperature")
+            humidity = message_dict.get("humidity")
+
+            return {     
+                "node_id": node_id,
+                "local_time_date": local_time_date,
+                "event_type": event_type,
+                "direction": direction,
+                "temperature": temperature,
+                "humidity": humidity
+            }
+
+
     except json.JSONDecodeError:
         print("Error: Invalid JSON message")
         return None
 
 def connect_mqtt() -> mqtt_client:
+    
     def on_connect(client, userdata, flags, rc):
 
         if rc == 0:
-            #rc = 0
             print("Connected to MQTT Broker!\n")
+            
         else:
             print("Failed to connect, return code", rc)
+
+        if flag_lostCon == 1 and rc == 0:
+            client.subscribe(attendanceRequestTopic)
+            client.subscribe(attendanceResponseTopic)
+            client.subscribe(storeTempfromNodesTopic)
+            client.on_message = on_message  # Set the on_message callback after successful connection
 
     client = mqtt_client.Client(client_id)
     client.username_pw_set(username, password)
     client.on_connect = on_connect
+    client.on_disconnect = on_disconnect
     client.connect(broker, port)
     return client
 
 def on_message(client, userdata, msg):
-    fields = extract_mqtt_fields(msg.payload.decode())
+    fields = extract_mqtt_fields(msg.payload.decode(),msg.topic)
     save_to_file = save_data_to_json_file(fields,'receivedMessages')
-    analyzeMessage(fields,client)
+    if(msg.topic == attendanceRequestTopic):
+        analyzeMessage(fields,client)
+    #if(msg.topic == storeTempfromNodesTopic):
 
 def subscribe(client: mqtt_client):
-    client.subscribe(topic)
+    client.subscribe(attendanceRequestTopic)
+    client.subscribe(attendanceResponseTopic)
+    client.subscribe(storeTempfromNodesTopic)
     client.on_message = on_message
 
 def save_data_to_json_file(data, filename):
@@ -246,7 +289,7 @@ def sendMessagetoMqtt(nodeID,localTimeDate,typeofEvent,cardUID,answer,studentNam
     }
 
     message_json = json.dumps(message_data)
-    client.publish(topic, message_json)
+    client.publish(attendanceResponseTopic, message_json)
 
 def analyzeMessage(payload,client):
 
@@ -256,15 +299,32 @@ def analyzeMessage(payload,client):
     if(payload['event_type'] == 1):
         checkifAllowed(payload['card_uid'],payload['node_id'],client)
 
+def request_temp(client):
+    while True:
+        # Publish message to the topic
+        client.publish("getTempfromNodes", "0")
+
+        # Wait for 5 minute
+        time.sleep(300)
+        #time.sleep(300)
+
 
 def main():
 
     client = connect_mqtt()
     subscribe(client)
-    mqtt_thread = threading.Thread(target=client.loop_forever)
-    mqtt_thread.start()
+
+    publish_thread = threading.Thread(target=request_temp, args=(client,))
+    publish_thread.start()
 
 
+    client.loop_forever()
+
+
+
+
+
+ 
 
 if __name__ == '__main__':
     main()
