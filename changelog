@@ -1,0 +1,17 @@
+Version Alpha 0.2:
+
+-> Nodes can now request local time from Border Router
+-> ADDED detection mechanisms for lost connections
+-> ADDED temperature and humidity functionality to Border Router and Node
+-> Server can now request temperature and humidity information from all nodes at a given interval 
+-> FIXED repeated MQTT message being sent by Border Router
+-> Border Router can now handle more than one node (threading was not yet implemented)
+
+Known BUGS:
+
+-> Time information is sometimes wrong in the node
+
+
+
+
+
