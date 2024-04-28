@@ -7,81 +7,48 @@ import sys
 import time
 import serial
 import re
+import mysql.connector
+
+smartClassRoomDB = mysql.connector.connect(
+  host="localhost",
+  user="root",
+  password="",
+  database=""
+)
+
 
 def add_class():
 
-    start_date = input("Enter start date (HH-MM-SS-DD-MM-YYYY): ")
-    end_date = input("Enter end date (HH-MM-SS-DD-MM-YYYY): ")
+    startDate = input("Enter start date (HH-MM-SS-DD-MM-YYYY): ")
+    endDate = input("Enter end date (HH-MM-SS-DD-MM-YYYY): ")
     room = input("Enter tower and room ex:(T62): ")
-    class_acronym = input("Enter class acronym ex:(IC): ")
-    class_number = input("Enter class number (ex:PL2): ")
+    classAcronym = input("Enter class acronym ex:(IC): ")
+    classNumber = input("Enter class number (ex:PL2): ")
     classIndex = ''.join(random.SystemRandom().choice(string.ascii_lowercase + string.digits + string.ascii_uppercase) for _ in range(6)) #6 digit random string
-    #start_date = "18000028032024"
-    #end_date = "20000028032024"
-    #room = "T51"
-    #class_acronym = "IC"
-    #class_number = "PL1"
 
-
-    class_data = {
+    data = [
+        {
         "classIndex": classIndex,
-        "classNumber": class_number,
-        "startDate": start_date,
-        "endDate": end_date,
+        "classNumber": classNumber,
+        "startDate": startDate,
+        "endDate": endDate,
         "room": room,
-        "associatedStudentsIndex": [''],
-        "presentStudents": [''],
-        "class_acronym": class_acronym
-    }
+        "classAcronym": classAcronym
+        },
+    ]
 
+    smartClassRoomCursor = smartClassRoomDB.cursor()
+    query = """
+    INSERT INTO classes (classIndex, classNumber, startDate, endDate, room, classAcronym)
+    VALUES (%(classIndex)s, %(classNumber)s, %(startDate)s, %(endDate)s, %(room)s, %(classAcronym)s)
+    """
 
-    #class_json = json.dumps(class_data, indent=4)
-    filename = "classesDB.json"
+    for row in data:
+        smartClassRoomCursor.execute(query, row)
 
-    
-    try:
-        # Serialize the class_data dictionary to JSON format
-        class_json = json.dumps(class_data, indent=4)
+    smartClassRoomDB.commit()
 
-        # Check if the file already exists
-        file_exists = True
-        try:
-            with open(filename, 'r') as file:
-                file_content = file.read().strip()
-                if not file_content:
-                    file_exists = False
-                elif file_content.endswith(']'):
-                    # Strip the closing bracket from the existing content
-                    file_content = file_content[:-1]
-                    with open(filename, 'w') as file:
-                        file.write(file_content)
-
-        except FileNotFoundError:
-            file_exists = False
-
-        # Add delimiters and commas if the file already exists
-        if file_exists:
-            class_json = ",\n" + class_json
-        else:
-            class_json = "[\n" + class_json
-
-        # Append the class_json string to the file
-        with open(filename, 'a') as file:
-            file.write(class_json)
-
-        # Close the array if the file already exists
-        if file_exists:
-            with open(filename, 'a') as file:
-                file.write("\n]")
-
-        if not(file_exists):
-            with open(filename, 'a') as file:
-                file.write("\n]") #apend the last ]
-
-
-        print(f"Class data saved to {filename} successfully.")
-    except Exception as e:
-        print(f"Error occurred while saving class data to {filename}: {e}")
+    return
 
 def add_student():
 
@@ -89,194 +56,79 @@ def add_student():
     studentUID = input("Enter student card UID: ")
     studentIndex = ''.join(random.SystemRandom().choice(string.ascii_lowercase + string.digits + string.ascii_uppercase) for _ in range(5)) #6 digit random string
 
-    student_data = {
+    data = [
+        {
         "studentIndex": studentIndex,
         "studentName": studentName,
         "studentUID": studentUID
-    }
+        },
+    ]
 
-    #student_json = json.dumps(student_data, indent=4)
+    smartClassRoomCursor = smartClassRoomDB.cursor()
+    query = """
+    INSERT INTO students (studentIndex, studentName, studentUID)
+    VALUES (%(studentIndex)s, %(studentName)s, %(studentUID)s)
+    """
 
-    filename = f"studentsDB.json"
+    for row in data:
+        smartClassRoomCursor.execute(query, row)
 
+    smartClassRoomDB.commit()
 
-    try:
-        student_json = json.dumps(student_data, indent=4)
+    return
 
-        # Check if the file already exists
-        file_exists = True
-        try:
-            with open(filename, 'r') as file:
-                file_content = file.read().strip()
-                if not file_content:
-                    file_exists = False
-                elif file_content.endswith(']'):
-                    # Strip the closing bracket from the existing content
-                    file_content = file_content[:-1]
-                    with open(filename, 'w') as file:
-                        file.write(file_content)
+def rem_class(classIndex):
 
-        except FileNotFoundError:
-            file_exists = False
+    smartClassRoomCursor = smartClassRoomDB.cursor()
 
-        # Add delimiters and commas if the file already exists
-        if file_exists:
-            student_json = ",\n" + student_json
-        else:
-            student_json = "[\n" + student_json
+    query = "DELETE FROM associatedStudents WHERE classIndex = \'{}'".format(classIndex)
+    smartClassRoomCursor.execute(query)
+    smartClassRoomDB.commit()
 
-        # Append the class_json string to the file
-        with open(filename, 'a') as file:
-            file.write(student_json)
+    query = "DELETE FROM presentStudents WHERE classIndex = \'{}'".format(classIndex)
+    smartClassRoomCursor.execute(query)
+    smartClassRoomDB.commit()
 
-        # Close the array if the file already exists
-        if file_exists:
-            with open(filename, 'a') as file:
-                file.write("\n]")
+    query = "DELETE FROM classes WHERE classIndex = \'{}'".format(classIndex)
+    smartClassRoomCursor.execute(query)
+    smartClassRoomDB.commit()
 
-        if not(file_exists):
-            with open(filename, 'a') as file:
-                file.write("\n]") #apend the last ]
+def rem_student(studentIndex):
 
+    smartClassRoomCursor = smartClassRoomDB.cursor()
 
-        print(f"Student data saved to {filename} successfully.")
-    except Exception as e:
-        print(f"Error occurred while saving student data to {filename}: {e}")
+    query = "DELETE FROM associatedStudents WHERE studentIndex = \'{}'".format(studentIndex)
+    smartClassRoomCursor.execute(query)
+    smartClassRoomDB.commit()
+
+    query = "DELETE FROM presentStudents WHERE studentIndex = \'{}'".format(studentIndex)
+    smartClassRoomCursor.execute(query)
+    smartClassRoomDB.commit()
+
+    query = "DELETE FROM students WHERE studentIndex = \'{}'".format(studentIndex)
+    smartClassRoomCursor.execute(query)
+    smartClassRoomDB.commit()
 
 
-
-
-
-
-
-  #  try:
-   #     with open(filename, 'a') as file:
-    ##        file.write(student_json + '\n')
-      #  print(f"Student data saved to {filename} successfully.")
-    #except Exception as e:
-     #   print(f"Error occurred while saving student data to {filename}: {e}")
 
 def add_stundent_to_class(classIndex,studentIndex):
 
-
-
-    with open('classesDB.json', 'r') as file:
-        classes_data = json.load(file)
-
-
-    # Iterate through each entry in the dictionary
-        
-    for entry in classes_data:
-        for key, entry_string in entry.items():
-
-            # Check if the value of the "classIndex" key matches the desired value
-            if entry_string == classIndex:
-                
-                for key, entry_string in entry.items():
-
-                    if(key == "associatedStudentsIndex"):
-
-                        if entry[key] == ['']:
-                            entry[key] = [studentIndex] 
-                        else:                            
-                           entry[key].append(studentIndex)
-                        break
-            break
-                
-        
-        else:
-            print("Desired class index not found in any entry")
-
-    
-
-
-
-
-
-    # Write the updated JSON data back to the file
-    with open('classesDB.json', 'w') as file:
-        json.dump(classes_data, file, indent=4)
-
-    print("Student {} successfully added to class {}".format(studentIndex,classIndex))
+    try:
+        smartClassRoomCursor = smartClassRoomDB.cursor()
+        query= "INSERT INTO associatedStudents (studentIndex, classIndex) VALUES ('{}', '{}')".format(studentIndex, classIndex)
+        smartClassRoomCursor.execute(query)
+        smartClassRoomDB.commit()
+        return 0
+   
+    except mysql.connector.Error as error:
+        smartClassRoomDB.rollback()
+        smartClassRoomCursor.close()
+        return -1
 
 def add_student_via_reading():
 
-    # Establish serial connection
-    ser = serial.Serial(
-    port='/dev/ttyUSB0',
-    baudrate=115200
-    )
 
-    print("Waiting for card...")
-
-    uid = None  # Initialize UID variable outside the loop
-    try:
-        while True:
-            if ser.in_waiting > 0:
-                data = ser.read(ser.in_waiting).decode('utf-8')
-                match = re.search(r'\(EVENT\) Card is read with UID \(([\dA-F\s]+)\)', data)
-                if match:
-                    uid = match.group(1) 
-                    print("Card Reading caught with UID:",uid)
-                    break
-    finally:
-        ser.close()
-
-
-    studentName = input("Enter student full name: ")
-    studentUID = uid
-    studentIndex = ''.join(random.SystemRandom().choice(string.ascii_lowercase + string.digits + string.ascii_uppercase) for _ in range(5)) #6 digit random string
-
-    student_data = {
-        "studentIndex": studentIndex,
-        "studentName": studentName,
-        "studentUID": studentUID
-    }
-
-    filename = f"studentsDB.json"
-
-    try:
-        student_json = json.dumps(student_data, indent=4)
-
-        # Check if the file already exists
-        file_exists = True
-        try:
-            with open(filename, 'r') as file:
-                file_content = file.read().strip()
-                if not file_content:
-                    file_exists = False
-                elif file_content.endswith(']'):
-                    # Strip the closing bracket from the existing content
-                    file_content = file_content[:-1]
-                    with open(filename, 'w') as file:
-                        file.write(file_content)
-
-        except FileNotFoundError:
-            file_exists = False
-
-        # Add delimiters and commas if the file already exists
-        if file_exists:
-            student_json = ",\n" + student_json
-        else:
-            student_json = "[\n" + student_json
-
-        # Append the class_json string to the file
-        with open(filename, 'a') as file:
-            file.write(student_json)
-
-        # Close the array if the file already exists
-        if file_exists:
-            with open(filename, 'a') as file:
-                file.write("\n]")
-
-        if not(file_exists):
-            with open(filename, 'a') as file:
-                file.write("\n]") #apend the last ]
-
-
-        print(f"Student data saved to {filename} successfully.")
-    except Exception as e:
-        print(f"Error occurred while saving student data to {filename}: {e}")
+    print("")
 
 def manage_students_menu():
 
@@ -284,18 +136,19 @@ def manage_students_menu():
 
     while True:
         print("Manage Students Menu:")
-        print("1. Add students to database")
-        print("2. Remove students from database")
-        print("3. Change students associated card UID")
-        print("4. View students in database")
-        print("5. Go back to main menu")
-        print("6. Add student via card UID reading")
+        print("1. Add students manually to database")
+        print("2. Add student via card UID reading")
+        print("3. Remove students from database")
+        print("4. Change students associated card UID")
+        print("5. View students in database")
+        print("6. Go back to main menu")
 
         choice = input("Enter your choice: ")
 
         if choice == '1':
             clear_screen()
             add_student()
+            print("Added student data successfully!")
             time.sleep(3)
             clear_screen()
 
@@ -305,24 +158,26 @@ def manage_students_menu():
             clear_screen()
 
         elif choice == '3':
-            print("Not Implemented!")
+            clear_screen()
+            studentIndex = viewStudentsInDB(True)
+            rem_student(studentIndex)
             time.sleep(1)
             clear_screen()
 
         elif choice == '4':
+            print("Not Implemented!")
+            time.sleep(1)
+            clear_screen()
+
+        elif choice == '5':
             clear_screen()
             viewStudentsInDB(False)
             choice = input("Enter any key to go back: ")
             clear_screen()
 
-        elif choice == '5':
-            clear_screen()
-            return
-        
         elif choice == '6':
             clear_screen()
-            add_student_via_reading()
-            clear_screen()
+            return
         
         else:
             print("Invalid choice. Please enter a valid option.")
@@ -331,17 +186,22 @@ def manage_students_menu():
 
 def viewCurrentClasses(enableSelection):
 
-    with open('classesDB.json', 'r') as file:
-        classes_data = json.load(file)
+    smartClassRoomCursor = smartClassRoomDB.cursor()
+    query = "SELECT * FROM classes"
+    smartClassRoomCursor.execute(query)
+    results = smartClassRoomCursor.fetchall()
+
 
     print("Classes:")
+    index = 1
 
-    for index, class_data in enumerate(classes_data, start=1):
-        print(f"{index}. {class_data['class_acronym']} - {class_data['classNumber']} - {class_data['classIndex']} - {class_data['room']} - {'Starts at: '} {createDateTimeObject(class_data['startDate'])} - {'Ends at: '} {createDateTimeObject(class_data['endDate'])}")
+    for result in results:
+        print(f"{index}. {result[5]} - {result[1]} - {result[0]} - {result[4]} - {'Starts at: '} {createDateTimeObject(result[2])} - {'Ends at: '} {createDateTimeObject(result[3])}")
+        index = index + 1
 
     if enableSelection == True:
         choice = int(input("Please select the desired class: "))
-        return classes_data[choice-1]['classIndex']
+        return results[choice-1][0]
 
     #adicionar salvaguardas para opcoes erradas
 
@@ -368,11 +228,14 @@ def manage_classes_menu():
         if choice == '1':
             clear_screen()
             add_class()
+            print("Class data added successfully!")
             time.sleep(2)
             clear_screen()
 
         elif choice == '2':
-            print("Not Implemented!")
+            clear_screen()
+            classIndex = viewCurrentClasses(True)
+            rem_class(classIndex)
             time.sleep(1)
             clear_screen()
 
@@ -454,7 +317,10 @@ def addStudentstoClassMenu2(classIndex):
             if choice == '1':
                 clear_screen()
                 studentIndex = viewStudentsInDB(True)
-                add_stundent_to_class(classIndex,studentIndex)
+                if (add_stundent_to_class(classIndex,studentIndex) == 0):
+                    print("Added student to class successfully!")
+                else:
+                    print("Student is already enrolled in this class!")
                 time.sleep(2)
                 clear_screen()
                 return
@@ -495,17 +361,24 @@ def createDateTimeObject(date_time_str):
 
 def viewStudentsInDB(enableSelection):
 
-    with open('studentsDB.json', 'r') as file:
-        students_data = json.load(file)
+    smartClassRoomCursor = smartClassRoomDB.cursor()
+    query = "SELECT * FROM students"
+    smartClassRoomCursor.execute(query)
+    results = smartClassRoomCursor.fetchall()
 
     print("Current students in database:")
+    index = 1
 
-    for index, class_data in enumerate(students_data, start=1):
-        print(f"{index}. {class_data['studentIndex']} - {class_data['studentName']} - {class_data['studentUID']} ")
+    #for index, class_data in enumerate(students_data, start=1):
+     #   print(f"{index}. {class_data['studentIndex']} - {class_data['studentName']} - {class_data['studentUID']} ")
+
+    for result in results:
+        print(f"{index}. {result[0]} - {result[1]} - {result[2]}")
+        index = index + 1
 
     if enableSelection == True:
         choice = int(input("Please select the desired student: "))
-        return students_data[choice-1]['studentIndex']
+        return results[choice-1][0]
     #adicionar salvaguardas para opcoes erradas
     
 def manage_iot_nodes_menu():

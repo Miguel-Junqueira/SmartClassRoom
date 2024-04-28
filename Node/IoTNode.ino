@@ -329,7 +329,7 @@ void callback_response(CoapPacket &packet, IPAddress ip, int port) {
 
 
         doc["nodeID"] = node_id;
-        doc["localTimeDate"] = "null";
+        doc["localTimeDate"] = tmToString(timeinfo);;
         doc["typeOfEvent"] = 3;
         doc["direction"] = "NS";
         doc["temperature"] = t;

@@ -9,8 +9,6 @@
 #include <ESPping.h>
 
 
-
-
 const char *wifi_network_ssid = "";
 const char *wifi_network_password = "";
 
@@ -31,7 +29,6 @@ const char *attendanceResponseTopic = "attendanceResponse";
 const char *getTempfromNodesTopic = "getTempfromNodes";
 const char *sendTempfromNodesTopic = "sendTempfromNodes";
 const char *storeTempfromNodesTopic ="storeTempfromNodes";
-
 const char *mqtt_username = "";
 const char *mqtt_password = "";
 const int mqtt_port = 1883;

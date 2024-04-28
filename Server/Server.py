@@ -7,6 +7,15 @@ import datetime
 import os 
 import sys
 import time
+import mysql.connector
+
+smartClassRoomDB = mysql.connector.connect(
+  host="localhost",
+  user="root",
+  password="",
+  database=""
+)
+
 
 
 broker = '127.0.0.1'
@@ -103,7 +112,8 @@ def on_message(client, userdata, msg):
     save_to_file = save_data_to_json_file(fields,'receivedMessages')
     if(msg.topic == attendanceRequestTopic):
         analyzeMessage(fields,client)
-    #if(msg.topic == storeTempfromNodesTopic):
+    if(msg.topic == storeTempfromNodesTopic):
+        storeTempfromNodes(fields)
 
 def subscribe(client: mqtt_client):
     client.subscribe(attendanceRequestTopic)
@@ -123,119 +133,111 @@ def save_data_to_json_file(data, filename):
     except Exception as e:
         print(f"Error occurred while saving data to {filename}: {e}")
 
+def storeTempfromNodes(fields):
+
+    node_id = fields['node_id']
+    local_time_date= fields['local_time_date']
+    temp = fields['temperature']
+    hum = fields['humidity']
+
+    smartClassRoomCursor = smartClassRoomDB.cursor()
+    query = "INSERT INTO tempHumidity (room, readingTimeDate, temperature, humidity) VALUES ('{}', '{}', '{}', '{}')".format(node_id, local_time_date, temp,hum)   
+    smartClassRoomCursor.execute(query)
+    smartClassRoomDB.commit()
+
+
+
 def checkifAllowed(studentUID, room,client):
 
     found = False
+    smartClassRoomCursor = smartClassRoomDB.cursor()
 
-    #1 - verificar se cartao existe na base de dados
-    with open('studentsDB.json', 'r') as file:
-        students_data = json.load(file) 
-        
-    # Iterate through each entry in the dictionary
-        
-    for entry in students_data:
-        for key, entry_string in entry.items():
+    query = "SELECT * FROM students WHERE studentUID = \'{}'".format(studentUID)
+    smartClassRoomCursor.execute(query)
+    result = smartClassRoomCursor.fetchone()
 
+     #1 check verifica se cartao existe na base de dados
 
-            # Check if the value of the "classIndex" key matches the desired value
-            if entry_string == studentUID: #estudante existe na base dados
-                
-                for key, entry_string in entry.items():
-
-                    if(key == "studentIndex"):                        
-                        print("Found student associated with card UID: ({}) and with student index: {}".format(studentUID, entry_string))
-                        studentName = entry['studentName']
-                        studentIndex = entry['studentIndex']
-                        found = True
-                        break
-
-                break
-
-    if (found==False):
-            print("Card not found in database!")
-            sendMessagetoMqtt(room,convert_to_custom_format(datetime.datetime.now()),1,studentUID,-4,"null",client)
-            return
-
-
-    #2- verificar se existem aulas naquela sala aquela hora e dia
-            
-             
-    with open('classesDB.json', 'r') as file:
-        classes_data = json.load(file)
-
-    found = False
-
-        
-    for entry in classes_data:
-        for key, entry_string in entry.items():
-
-            associatedStudents = entry['associatedStudentsIndex']
-            classIndex = entry['classIndex']
-            presentStudents = entry['presentStudents']
-
-            # Check if the value of the "classIndex" key matches the desired value
-            if entry_string == room:
-                
-                for key, entry_string in entry.items():
-
-                    if(key == "startDate"):
-
-                        if(datetime.datetime.now() >= createDateTimeObject(entry_string)):#se agora for mais cedo 
-                            continue
-
-                    if(key == "endDate"):
-
-                        if(datetime.datetime.now() <= createDateTimeObject(entry_string)):
-                                print("Found class with index {} associated with room {} at current time: {}".format(classIndex,room, datetime.datetime.now()
-.strftime("%H:%M:%S")))
-                                found = True                                
-                                break 
-                       
-                if found:
-                    break  
-    
-        if found:
-            break  
-                                        
-        
+    if result:
+        studentIndex = result[0]
+        studentName = result[1]
+        print("Found student associated with card UID: ({}) and with student index: {}".format(studentUID, result[0]))
     else:
-            print("No class was found in the database at current time: {}".format(datetime.datetime.now()))
-            sendMessagetoMqtt(room,convert_to_custom_format(datetime.datetime.now()),1,studentUID,-2,studentName,client)
-            return
-            
+        print("Card not found in database!")
+        sendMessagetoMqtt(room,convert_to_custom_format(datetime.datetime.now()),1,studentUID,-4,"null",client)
+        return
+    
+    #2 verificar se existem aulas naquela sala aquela hora e dia
+    query = "SELECT * FROM classes WHERE room = \'{}'".format(room)
+    smartClassRoomCursor.execute(query)
+    results = smartClassRoomCursor.fetchall()
+
+    for result in results:
+        
+        classIndex = result[0]
+
+        if(datetime.datetime.now() >= createDateTimeObject(result[2]) and datetime.datetime.now() <= createDateTimeObject(result[3])):
+            print("Found class with index {} associated with room {} at current time: {}".format(classIndex,room, datetime.datetime.now() .strftime("%H:%M:%S")))
+            found = True   
+            break
+
+    if (found == False):    
+        print("No class was found in the database at current time: {}".format(datetime.datetime.now()))
+        sendMessagetoMqtt(room,convert_to_custom_format(datetime.datetime.now()),1,studentUID,-2,studentName,client)
+        return
+
+    found = False         
+         
     #3- verificar se naquela aula em especifico o aluno em questao esta associado
 
-    for item in associatedStudents:
-        if(studentIndex == item):
+    query = "SELECT classIndex FROM associatedStudents WHERE studentIndex = \'{}'".format(studentIndex)
+    smartClassRoomCursor.execute(query)
+    result = smartClassRoomCursor.fetchone()
 
-            for item in presentStudents:
+    if result:
+        print("Student was found in this class!")
 
-                if(studentIndex == item):
-                    sendMessagetoMqtt(room,convert_to_custom_format(datetime.datetime.now()),1,studentUID,-3,studentName,client)
-                    return
-                else:
-                    addStudentRegistration(entry,studentIndex,classes_data)
-                    sendMessagetoMqtt(room,convert_to_custom_format(datetime.datetime.now()),1,studentUID,1,studentName,client)
-                    return
+    else:
+         print("Student {} with student index {} not registered in class!".format(studentName,studentIndex))
+         sendMessagetoMqtt(room,convert_to_custom_format(datetime.datetime.now()),1,studentUID,-1,studentName,client)
+         return 
+    
+    #4 verificar se o estudante ja tem a presenca registrada naquela aula
 
+    
+    query = "SELECT classIndex FROM presentStudents WHERE studentIndex = \'{}'".format(studentIndex)
+    smartClassRoomCursor.execute(query)
+    result = smartClassRoomCursor.fetchone()
 
+    if result:
+        print("Student attendance already registered!")
+        sendMessagetoMqtt(room,convert_to_custom_format(datetime.datetime.now()),1,studentUID,-3,studentName,client)
+
+    else:
+
+        if(addStudentRegistration(studentIndex,classIndex) == 0):
+            print("Student attendance was registered in class!")
+            sendMessagetoMqtt(room,convert_to_custom_format(datetime.datetime.now()),1,studentUID,1,studentName,client)
+            return
         else:
-            print("Student {} with student index {} not registered in class!".format(studentName,studentIndex))
-            sendMessagetoMqtt(room,convert_to_custom_format(datetime.datetime.now()),1,studentUID,-1,studentName,client)
+            print("Error occurred while adding student registration!")       
             return
 
-def addStudentRegistration(entry,studentIndex,classes_data):
-        
-        if entry['presentStudents'] == ['']:
-            entry['presentStudents'] = [studentIndex]
-                # Write the updated JSON data back to the file
-            with open('classesDB.json', 'w') as file:
-                json.dump(classes_data, file, indent=4) 
-        else:                            
-            entry['presentStudents'].append(studentIndex)
-            with open('classesDB.json', 'w') as file:
-                json.dump(classes_data, file, indent=4) 
-    
+def addStudentRegistration(studentIndex,classIndex):
+   
+   try: 
+   
+    smartClassRoomCursor = smartClassRoomDB.cursor()
+    query = "INSERT INTO presentStudents (studentIndex, classIndex) VALUES ('{}', '{}')".format(studentIndex, classIndex)   
+    smartClassRoomCursor.execute(query)
+    smartClassRoomDB.commit()
+    return 0
+   
+   except mysql.connector.Error as error:
+    smartClassRoomDB.rollback()
+    smartClassRoomCursor.close()
+    return -1
+
 def convert_to_custom_format(current_time):
 
     # Extract components from current_time
@@ -261,7 +263,7 @@ def convert_to_custom_format(current_time):
    
 def createDateTimeObject(date_time_str):
 
-    
+
     
     # Extract year, month, day, hour, minute, and second components
     year = int(date_time_str[10:14])
@@ -305,7 +307,7 @@ def request_temp(client):
         client.publish("getTempfromNodes", "0")
 
         # Wait for 5 minute
-        time.sleep(300)
+        time.sleep(60)
         #time.sleep(300)
 
 
