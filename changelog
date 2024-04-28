@@ -12,6 +12,13 @@ Known BUGS:
 -> Time information is sometimes wrong in the node
 
 
+Version Alpha 0.3:
 
+-> Changed the server and menu logic to MySQL
+-> Added some features to the menu
+-> Full bi-directional connectivity is now implemented
 
+Known BUGS:
+
+-> Time information is sometimes wrong in the node
 
